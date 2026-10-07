@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WorkLog
 
-## Getting Started
+Your personal professional work diary + proof-of-work system. Log daily work, track normal/extra hours, attach evidence, record blockers/meetings/learning, and generate reports you can share with your manager.
 
-First, run the development server:
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000 — it starts in **demo mode** with sample data (marked `[Sample]`) stored in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Enable cloud sync (accounts + cross-device)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a free project at https://supabase.com
+2. In the Supabase dashboard → **SQL Editor**, paste and run `supabase/schema.sql`
+3. Project Settings → API → copy the project URL and anon key into `.env.local` (see `.env.example`)
+4. Restart `npm run dev` — you'll get a login/signup screen, and all data syncs to Postgres
 
-## Learn More
+## Deploy to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+Push this repo to GitHub, import into Vercel, and add the two env vars in project settings. Done — access it from your phone or laptop with the same account.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Dashboard** — greeting, hours today/week, extra hours, task & blocker stats, weekly chart, recent work, quick actions
+- **Daily Log** (`/log`) — timeline per day with total/extra hours, edit/delete inline
+- **Quick Log** (`/log/new?quick=1`) — under-a-minute entry
+- **Projects, Evidence, Blockers, Meetings, Learning** — full CRUD sections
+- **Extra Hours** (`/extra-hours`) — normal vs extra totals + history table
+- **Calendar** (`/calendar`) — month/week views with per-day indicators
+- **Search** (`/search`) — searches everything with filters
+- **Reports** (`/reports`) — professional reports (copy/download/export CSV+JSON)
+- **Weekly Summary** (`/weekly`), **Analytics** (`/analytics`), **Tags**, **Settings**
+- Light/dark theme, fully responsive (mobile bottom nav)
