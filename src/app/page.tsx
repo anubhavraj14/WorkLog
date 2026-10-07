@@ -99,7 +99,7 @@ export default function Dashboard() {
                 {b.description && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{b.description}</p>}
               </Card>
             ))}
-            {!openBlockers.length && <p className="text-sm text-zinc-500">No active blockers. 🎉</p>}
+            {!openBlockers.length && <p className="text-sm text-zinc-500">No active blockers.</p>}
           </div>
 
           <h2 className="mb-2 mt-6 text-sm font-semibold">Quick Actions</h2>

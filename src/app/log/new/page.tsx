@@ -15,7 +15,7 @@ export default function NewEntry() {
       <div className="mb-4 flex rounded-lg border border-zinc-200 p-1 text-sm dark:border-zinc-700">
         {(["quick", "full"] as const).map((t) => (
           <button key={t} onClick={() => setTab(t)} className={cn("flex-1 rounded-md px-3 py-1.5 font-medium", tab === t ? "bg-indigo-600 text-white" : "text-zinc-500")}>
-            {t === "quick" ? "⚡ Quick Log" : "Full Details"}
+            {t === "quick" ? "Quick Log" : "Full Details"}
           </button>
         ))}
       </div>

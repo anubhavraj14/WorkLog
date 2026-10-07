@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Card, Button, PageHeader, Input } from "@/components/ui";
-import { generateReport, download, exportCSV } from "@/lib/report";
+import { generateReport, download, downloadPDF, exportCSV } from "@/lib/report";
 import { ReportResult } from "@/lib/report";
 import { weekRange, monthRange, fmtDate, parseISO } from "@/lib/utils";
 import { addWeeks, addMonths, startOfDay, endOfDay, format } from "date-fns";
@@ -66,7 +66,8 @@ export default function Reports() {
         <>
           <div className="mb-3 flex flex-wrap gap-2">
             <Button variant="ghost" onClick={copy}><Copy size={14} /> {copied ? "Copied!" : "Copy Report"}</Button>
-            <Button variant="ghost" onClick={() => download(`worklog-report.md`, report.markdown)}><Download size={14} /> Download Report</Button>
+            <Button variant="ghost" onClick={() => downloadPDF("Work Report", report.markdown)}><FileDown size={14} /> Download PDF</Button>
+            <Button variant="ghost" onClick={() => download(`worklog-report.md`, report.markdown)}><Download size={14} /> Markdown</Button>
             <Button variant="ghost" onClick={() => download(`worklog-data.csv`, exportCSV(report.entries, projName), "text/csv")}><FileDown size={14} /> Export CSV</Button>
             <Button variant="ghost" onClick={() => download(`worklog-export.json`, JSON.stringify({ generated: new Date().toISOString(), ...data }, null, 2), "application/json")}><FileDown size={14} /> Export JSON</Button>
           </div>

@@ -76,6 +76,53 @@ export function generateReport(data: Data, start: Date, end: Date, name: string)
   return { title, markdown: lines.join("\n"), entries, totalMin, extraMin };
 }
 
+export async function downloadPDF(title: string, markdown: string) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 48;
+  const maxW = pageW - margin * 2;
+  let y = margin;
+
+  const ensure = (h: number) => {
+    if (y + h > pageH - margin) { doc.addPage(); y = margin; }
+  };
+
+  for (const line of markdown.split("\n")) {
+    if (line.startsWith("# ")) {
+      ensure(28);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(17);
+      const parts = doc.splitTextToSize(line.slice(2), maxW);
+      doc.text(parts, margin, y); y += parts.length * 20 + 8;
+    } else if (line.startsWith("## ")) {
+      ensure(30);
+      y += 8;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+      doc.setTextColor(79, 70, 229);
+      doc.text(line.slice(3), margin, y); y += 18;
+      doc.setTextColor(30, 30, 30);
+    } else if (line.trim() === "") {
+      y += 4;
+    } else {
+      const isBullet = line.startsWith("- ");
+      let text = isBullet ? line.slice(2) : line;
+      const isItalic = /^_.*_$/.test(text.trim());
+      if (isItalic) text = text.trim().slice(1, -1);
+      doc.setFont("helvetica", isItalic ? "italic" : "normal");
+      doc.setFontSize(10.5);
+      // strip markdown bold markers, render bold segments plainly
+      text = text.replace(/\*\*(.+?)\*\*/g, "$1");
+      const parts = doc.splitTextToSize(text, maxW - (isBullet ? 14 : 0));
+      ensure(parts.length * 14);
+      if (isBullet) doc.text("•", margin, y);
+      doc.text(parts, margin + (isBullet ? 14 : 0), y);
+      y += parts.length * 14;
+    }
+  }
+  doc.save(`${title.replace(/[^\w]+/g, "-").toLowerCase()}.pdf`);
+}
+
 export function download(filename: string, content: string, type = "text/markdown") {
   const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);

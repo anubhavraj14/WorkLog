@@ -51,7 +51,7 @@ export default function SettingsPage() {
         </Field>
       </Card>
 
-      <Button onClick={save} className="w-full justify-center">{saved ? "Saved ✓" : "Save settings"}</Button>
+      <Button onClick={save} className="w-full justify-center">{saved ? "Saved" : "Save settings"}</Button>
 
       <Card className="space-y-3">
         <h2 className="text-sm font-semibold">Data Management</h2>

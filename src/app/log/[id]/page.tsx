@@ -78,13 +78,13 @@ export default function EntryDetail() {
       {meetings.length > 0 && (
         <Card>
           <h2 className="mb-2 text-sm font-semibold">Related Meetings</h2>
-          {meetings.map((m) => <div key={m.id} className="py-1 text-sm">🗓 {m.name} — {fmtTime(m.start_time)}{m.attendees ? ` · ${m.attendees}` : ""}</div>)}
+          {meetings.map((m) => <div key={m.id} className="py-1 text-sm">{m.name} — {fmtTime(m.start_time)}{m.attendees ? ` · ${m.attendees}` : ""}</div>)}
         </Card>
       )}
       {blockers.length > 0 && (
         <Card>
           <h2 className="mb-2 text-sm font-semibold">Related Blockers</h2>
-          {blockers.map((b) => <div key={b.id} className="py-1 text-sm">⚠️ {b.title} — waiting for {b.waiting_for || "—"}</div>)}
+          {blockers.map((b) => <div key={b.id} className="py-1 text-sm">{b.title} — waiting for {b.waiting_for || "—"}</div>)}
         </Card>
       )}
 

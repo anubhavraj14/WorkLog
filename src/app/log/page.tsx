@@ -75,7 +75,7 @@ export default function DailyLog() {
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <div className="text-xs font-medium text-zinc-500">{fmtTime(it.m.start_time)}{it.m.end_time ? ` – ${fmtTime(it.m.end_time)}` : ""}</div>
-                    <div className="font-medium">🗓 {it.m.name}{it.m.is_sample && <SampleMark />}</div>
+                    <div className="font-medium">{it.m.name}{it.m.is_sample && <SampleMark />}</div>
                     {it.m.attendees && <div className="text-xs text-zinc-500">with {it.m.attendees}</div>}
                   </div>
                   <div className="flex gap-1">
