@@ -37,9 +37,9 @@ export default function Dashboard() {
   }
 
   const stat = (label: string, value: string, icon: React.ReactNode) => (
-    <Card className="flex items-center gap-3 p-3.5">
-      <div className="rounded-lg bg-indigo-50 p-2 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">{icon}</div>
-      <div><div className="text-lg font-semibold leading-tight">{value}</div><div className="text-xs text-zinc-500">{label}</div></div>
+    <Card className="flex items-center gap-3 p-4">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">{icon}</div>
+      <div><div className="text-xl font-semibold leading-tight tracking-tight">{value}</div><div className="text-xs text-zinc-500">{label}</div></div>
     </Card>
   );
 
@@ -119,7 +119,7 @@ export default function Dashboard() {
         </section>
       </div>
 
-      <Modal open={modal === "work"} onClose={() => setModal(null)} title="Log Work"><WorkEntryForm onSaved={() => setModal(null)} /></Modal>
+      <Modal wide open={modal === "work"} onClose={() => setModal(null)} title="Log Work"><WorkEntryForm onSaved={() => setModal(null)} /></Modal>
       <Modal open={modal === "project"} onClose={() => setModal(null)} title="Add Project"><ProjectForm onSaved={() => setModal(null)} /></Modal>
       <Modal open={modal === "evidence"} onClose={() => setModal(null)} title="Add Evidence"><EvidenceForm onSaved={() => setModal(null)} /></Modal>
       <Modal open={modal === "meeting"} onClose={() => setModal(null)} title="Add Meeting"><MeetingForm onSaved={() => setModal(null)} /></Modal>

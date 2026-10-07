@@ -90,7 +90,7 @@ export default function DailyLog() {
         {!items.length && <p className="text-sm text-zinc-500">Nothing logged for this day.</p>}
       </div>
 
-      <Modal open={!!edit} onClose={() => setEdit(null)} title="Edit Work Entry">{edit && <WorkEntryForm initial={edit} onSaved={() => setEdit(null)} />}</Modal>
+      <Modal wide open={!!edit} onClose={() => setEdit(null)} title="Edit Work Entry">{edit && <WorkEntryForm initial={edit} onSaved={() => setEdit(null)} />}</Modal>
       <Modal open={!!editMeeting} onClose={() => setEditMeeting(null)} title="Edit Meeting">{editMeeting && <MeetingForm initial={editMeeting} onSaved={() => setEditMeeting(null)} />}</Modal>
     </div>
   );

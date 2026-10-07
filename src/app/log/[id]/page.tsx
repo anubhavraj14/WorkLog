@@ -88,7 +88,7 @@ export default function EntryDetail() {
         </Card>
       )}
 
-      <Modal open={editing} onClose={() => setEditing(false)} title="Edit Work Entry"><WorkEntryForm initial={e} onSaved={() => setEditing(false)} /></Modal>
+      <Modal wide open={editing} onClose={() => setEditing(false)} title="Edit Work Entry"><WorkEntryForm initial={e} onSaved={() => setEditing(false)} /></Modal>
       <Modal open={addingEvidence} onClose={() => setAddingEvidence(false)} title="Add Evidence"><EvidenceForm workEntryId={e.id} onSaved={() => setAddingEvidence(false)} /></Modal>
     </div>
   );

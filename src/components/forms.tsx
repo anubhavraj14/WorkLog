@@ -6,7 +6,7 @@ import {
   WORK_CATEGORIES, WORK_STATUSES, PRIORITIES, PROJECT_STATUSES, BLOCKER_STATUSES, EVIDENCE_TYPES,
 } from "@/lib/types";
 import { durationBetween, fmtDuration, todayStr, uid } from "@/lib/utils";
-import { Button, Field, Input, Select, Textarea } from "./ui";
+import { Button, Field, Input, Select, Textarea, Seg, Switch, Section } from "./ui";
 
 const now = () => {
   const d = new Date();
@@ -37,78 +37,87 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
     onSaved?.();
   };
 
+  const [showMore, setShowMore] = useState(!!initial);
   return (
-    <div className="space-y-3">
-      <Field label="What did you work on?">
-        <Input autoFocus value={e.title} onChange={(ev) => set({ title: ev.target.value })} placeholder="e.g. Tested Ramp Creation Agent" />
-      </Field>
-      {!quick && (
-        <Field label="What did you actually do?">
-          <Textarea value={e.description} onChange={(ev) => set({ description: ev.target.value })} placeholder="Details, steps, findings…" />
-        </Field>
-      )}
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Project">
-          <Select value={e.project_id ?? ""} onChange={(ev) => set({ project_id: ev.target.value || null })}>
-            <option value="">— None —</option>
-            {data.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </Select>
-        </Field>
-        <Field label="Category">
-          <Select value={e.category} onChange={(ev) => set({ category: ev.target.value as WorkEntry["category"] })}>
-            {WORK_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-          </Select>
-        </Field>
-        <Field label="Status">
-          <Select value={e.status} onChange={(ev) => set({ status: ev.target.value as WorkEntry["status"] })}>
-            {WORK_STATUSES.map((s) => <option key={s}>{s}</option>)}
-          </Select>
-        </Field>
-        <Field label="Priority">
-          <Select value={e.priority} onChange={(ev) => set({ priority: ev.target.value as WorkEntry["priority"] })}>
-            {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
-          </Select>
-        </Field>
-        <Field label="Date">
-          <Input type="date" value={e.date} onChange={(ev) => set({ date: ev.target.value })} />
-        </Field>
-        <Field label={quick ? "Duration (minutes)" : `Start time${dur ? ` · ${fmtDuration(dur)}` : ""}`}>
-          {quick ? (
-            <Input type="number" min={0} value={e.duration_min || ""} onChange={(ev) => set({ duration_min: Number(ev.target.value) })} placeholder="120" />
-          ) : (
-            <Input type="time" value={e.start_time} onChange={(ev) => set({ start_time: ev.target.value })} />
-          )}
+    <div className="space-y-6">
+      {/* Task */}
+      <div className="space-y-3">
+        <Field label="What did you work on?">
+          <Input autoFocus value={e.title} onChange={(ev) => set({ title: ev.target.value })} placeholder="e.g. Tested Ramp Creation Agent" className="text-[15px]" />
         </Field>
         {!quick && (
-          <Field label="End time">
-            <Input type="time" value={e.end_time} onChange={(ev) => set({ end_time: ev.target.value })} />
+          <Field label="What did you actually do?">
+            <Textarea value={e.description} onChange={(ev) => set({ description: ev.target.value })} placeholder="Details, steps, findings…" />
           </Field>
         )}
-        <Field label="Extra hours?">
-          <Select value={e.is_extra ? "yes" : "no"} onChange={(ev) => set({ is_extra: ev.target.value === "yes" })}>
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
-          </Select>
+      </div>
+
+      {/* Classification */}
+      <Section title="Details">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Project">
+            <Select value={e.project_id ?? ""} onChange={(ev) => set({ project_id: ev.target.value || null })}>
+              <option value="">No project</option>
+              {data.projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </Select>
+          </Field>
+          <Field label="Priority">
+            <Seg value={e.priority} onChange={(v) => set({ priority: v })} options={PRIORITIES} />
+          </Field>
+        </div>
+        <Field label="Category">
+          <Seg value={e.category} onChange={(v) => set({ category: v })} options={WORK_CATEGORIES} />
         </Field>
+        <Field label="Status">
+          <Seg value={e.status} onChange={(v) => set({ status: v })} options={WORK_STATUSES}
+            color={(s) => s === "Completed" ? "bg-emerald-600 text-white" : s === "Blocked" ? "bg-red-600 text-white" : s === "In Progress" ? "bg-blue-600 text-white" : undefined} />
+        </Field>
+      </Section>
+
+      {/* Time */}
+      <Section title="Time">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Field label="Date"><Input type="date" value={e.date} onChange={(ev) => set({ date: ev.target.value })} /></Field>
+          {quick ? (
+            <Field label="Duration (min)"><Input type="number" min={0} value={e.duration_min || ""} onChange={(ev) => set({ duration_min: Number(ev.target.value) })} placeholder="120" /></Field>
+          ) : (
+            <>
+              <Field label="Start"><Input type="time" value={e.start_time} onChange={(ev) => set({ start_time: ev.target.value })} /></Field>
+              <Field label="End"><Input type="time" value={e.end_time} onChange={(ev) => set({ end_time: ev.target.value })} /></Field>
+            </>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3.5 py-3 dark:bg-zinc-800/60">
+          <div className="text-sm">
+            <span className="text-zinc-500">Duration</span>{" "}
+            <span className="font-semibold">{dur ? fmtDuration(dur) : "—"}</span>
+          </div>
+          <Switch checked={e.is_extra} onChange={(v) => set({ is_extra: v })} label="Extra hours" />
+        </div>
         {e.is_extra && (
           <Field label="Reason for extra hours">
             <Input value={e.extra_reason} onChange={(ev) => set({ extra_reason: ev.target.value })} placeholder="e.g. Additional testing requested" />
           </Field>
         )}
-        {!quick && (
-          <Field label="Tags (comma separated)">
-            <Input value={tagsRaw} onChange={(ev) => setTagsRaw(ev.target.value)} placeholder="AI Agents, Testing" />
-          </Field>
-        )}
-      </div>
+      </Section>
+
+      {/* Optional extras */}
       {!quick && (
-        <>
-          <Field label="What I accomplished"><Textarea value={e.accomplishments} onChange={(ev) => set({ accomplishments: ev.target.value })} /></Field>
-          <Field label="Issues found"><Textarea value={e.issues_found} onChange={(ev) => set({ issues_found: ev.target.value })} /></Field>
-          <Field label="Notes"><Textarea value={e.notes} onChange={(ev) => set({ notes: ev.target.value })} /></Field>
-        </>
+        showMore ? (
+          <Section title="More">
+            <Field label="Tags" hint="comma separated"><Input value={tagsRaw} onChange={(ev) => setTagsRaw(ev.target.value)} placeholder="AI Agents, Testing" /></Field>
+            <Field label="What I accomplished"><Textarea value={e.accomplishments} onChange={(ev) => set({ accomplishments: ev.target.value })} /></Field>
+            <Field label="Issues found"><Textarea value={e.issues_found} onChange={(ev) => set({ issues_found: ev.target.value })} /></Field>
+            <Field label="Notes"><Textarea value={e.notes} onChange={(ev) => set({ notes: ev.target.value })} /></Field>
+          </Section>
+        ) : (
+          <button type="button" onClick={() => setShowMore(true)} className="text-sm font-medium text-indigo-600 hover:underline">
+            + Add tags, accomplishments, issues & notes
+          </button>
+        )
       )}
-      <Button onClick={save} disabled={saving} className="w-full justify-center">{saving ? "Saving…" : initial ? "Save changes" : "Log work"}</Button>
+
+      <Button onClick={save} disabled={saving} className="w-full justify-center py-2.5">{saving ? "Saving…" : initial ? "Save changes" : "Log work"}</Button>
     </div>
   );
 }
@@ -128,7 +137,7 @@ export function ProjectForm({ initial, onSaved }: { initial?: Project; onSaved?:
       <Field label="Description"><Textarea value={p.description} onChange={(e) => set({ description: e.target.value })} /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Company / client"><Input value={p.client} onChange={(e) => set({ client: e.target.value })} /></Field>
-        <Field label="Status"><Select value={p.status} onChange={(e) => set({ status: e.target.value as Project["status"] })}>{PROJECT_STATUSES.map((s) => <option key={s}>{s}</option>)}</Select></Field>
+        <Field label="Status"><Seg value={p.status} onChange={(v) => set({ status: v })} options={PROJECT_STATUSES} /></Field>
         <Field label="Start date"><Input type="date" value={p.start_date} onChange={(e) => set({ start_date: e.target.value })} /></Field>
         <Field label="End date"><Input type="date" value={p.end_date} onChange={(e) => set({ end_date: e.target.value })} /></Field>
       </div>
@@ -201,7 +210,8 @@ export function BlockerForm({ initial, onSaved }: { initial?: Blocker; onSaved?:
           </Select>
         </Field>
         <Field label="Waiting for"><Input value={b.waiting_for} onChange={(e) => set({ waiting_for: e.target.value })} placeholder="Team / person" /></Field>
-        <Field label="Status"><Select value={b.status} onChange={(e) => set({ status: e.target.value as Blocker["status"] })}>{BLOCKER_STATUSES.map((s) => <option key={s}>{s}</option>)}</Select></Field>
+        <Field label="Status"><Seg value={b.status} onChange={(v) => set({ status: v })} options={BLOCKER_STATUSES}
+          color={(s) => s === "Resolved" ? "bg-emerald-600 text-white" : s === "Open" ? "bg-red-600 text-white" : s === "Waiting" ? "bg-amber-500 text-white" : undefined} /></Field>
         <Field label="Created"><Input type="date" value={b.created_date} onChange={(e) => set({ created_date: e.target.value })} /></Field>
       </div>
       <Field label="Description"><Textarea value={b.description} onChange={(e) => set({ description: e.target.value })} /></Field>

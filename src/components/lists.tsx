@@ -14,7 +14,7 @@ export function useProjectName() {
 export function EntryRow({ e }: { e: WorkEntry }) {
   const projName = useProjectName();
   return (
-    <Link href={`/log/${e.id}`} className="block rounded-xl border border-zinc-200 bg-white p-3 transition-colors hover:border-indigo-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-indigo-700">
+    <Link href={`/log/${e.id}`} className="block rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-all hover:border-zinc-300 hover:shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium">{e.title}{e.is_sample && <SampleMark />}</span>
         <StatusBadge s={e.status} />
