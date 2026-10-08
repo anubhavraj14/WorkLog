@@ -69,7 +69,7 @@ export default function DailyLog() {
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setEdit(it.w)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"><Pencil size={14} /></button>
-                    <button onClick={async () => (await dialog.confirm("This work entry will be permanently removed.", { title: "Delete work entry?", destructive: true })) && remove("workEntries", it.w.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+                    <button onClick={async () => (await dialog.confirm("This work entry and all attached evidence will be permanently removed.", { title: "Delete work entry?", destructive: true })) && remove("workEntries", it.w.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
                   </div>
                 </div>
               </Card>

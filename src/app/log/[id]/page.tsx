@@ -52,7 +52,7 @@ export default function EntryDetail() {
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => setEditing(true)}><Pencil size={14} /> Edit</Button>
-          <Button variant="danger" onClick={async () => { if (await dialog.confirm("This work entry will be permanently removed.", { title: "Delete work entry?", destructive: true })) { await remove("workEntries", e.id); router.push("/log"); } }}><Trash2 size={14} /></Button>
+          <Button variant="danger" onClick={async () => { if (await dialog.confirm("This work entry and all attached evidence will be permanently removed.", { title: "Delete work entry?", destructive: true })) { await remove("workEntries", e.id); router.push("/log"); } }}><Trash2 size={14} /></Button>
         </div>
       </div>
 

@@ -122,20 +122,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
 
   const remove: Store["remove"] = async (key, id) => {
+    const evidencePath = (evidence: Data["evidence"][number]) => {
+      const marker = "/storage/v1/object/public/evidence/";
+      const encodedPath = evidence.url.includes(marker) ? evidence.url.split(marker)[1]?.split("?")[0] : "";
+      return evidence.file_path || (encodedPath ? decodeURIComponent(encodedPath) : "");
+    };
     if (mode === "cloud" && sb && userId) {
-      if (key === "evidence") {
-        const evidence = data.evidence.find((item) => item.id === id);
-        const marker = "/storage/v1/object/public/evidence/";
-        const encodedPath = evidence?.url.includes(marker) ? evidence.url.split(marker)[1]?.split("?")[0] : "";
-        const path = evidence?.file_path || (encodedPath ? decodeURIComponent(encodedPath) : "");
-        if (path.startsWith(`${userId}/`)) {
-          const { error } = await sb.storage.from("evidence").remove([path]);
-          if (error) throw new Error(`File deletion failed: ${error.message}`);
-        }
+      const linkedEvidence = key === "workEntries" ? data.evidence.filter((item) => item.work_entry_id === id) : [];
+      const evidence = key === "evidence" ? data.evidence.find((item) => item.id === id) : null;
+      const paths = [...linkedEvidence, ...(evidence ? [evidence] : [])]
+        .map(evidencePath)
+        .filter((path) => path.startsWith(`${userId}/`));
+      if (paths.length) {
+        const { error } = await sb.storage.from("evidence").remove(paths);
+        if (error) throw new Error(`File deletion failed: ${error.message}`);
+      }
+      if (linkedEvidence.length) {
+        const { error } = await sb.from(TABLE.evidence).delete().in("id", linkedEvidence.map((item) => item.id));
+        if (error) throw new Error(`Evidence deletion failed: ${error.message}`);
       }
       const { error } = await sb.from(TABLE[key]).delete().eq("id", id);
       if (error) throw new Error(`Deletion failed: ${error.message}`);
       await loadCloud(userId);
+    } else if (key === "workEntries") {
+      persistDemo({
+        ...data,
+        workEntries: data.workEntries.filter((item) => item.id !== id),
+        evidence: data.evidence.filter((item) => item.work_entry_id !== id),
+      });
     } else persistDemo({ ...data, [key]: (data[key] as { id: ID }[]).filter((r) => r.id !== id) } as Data);
   };
 
