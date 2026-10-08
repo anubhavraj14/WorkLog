@@ -128,7 +128,8 @@ export function ProjectForm({ initial, onSaved }: { initial?: Project; onSaved?:
   const set = (x: Partial<Project>) => setP((prev) => ({ ...prev, ...x }));
   const save = async () => {
     if (!p.name.trim()) return alert("Enter a project name");
-    if (initial) await update("projects", p.id, p); else await add("projects", p);
+    const payload = { ...p, end_date: p.end_date || null } as Project & { end_date: string | null };
+    if (initial) await update("projects", p.id, payload); else await add("projects", payload);
     onSaved?.();
   };
   return (
