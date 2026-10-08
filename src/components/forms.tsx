@@ -153,16 +153,23 @@ export function EvidenceForm({ initial, workEntryId, onSaved }: { initial?: Evid
   const [ev, setEv] = useState<Evidence>(initial ?? { id: uid(), name: "", type: "Link", url: "", file_path: "", project_id: null, work_entry_id: workEntryId ?? null, description: "", date: todayStr() });
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const set = (x: Partial<Evidence>) => setEv((prev) => ({ ...prev, ...x }));
   const save = async () => {
     if (!ev.name.trim()) return alert("Enter an evidence name");
     setBusy(true);
-    let url = ev.url;
-    if (file) url = await uploadFile(file);
-    const item = { ...ev, url };
-    if (initial) await update("evidence", ev.id, item); else await add("evidence", item);
-    setBusy(false);
-    onSaved?.();
+    setError(null);
+    try {
+      let url = ev.url;
+      if (file) url = await uploadFile(file);
+      const item = { ...ev, url };
+      if (initial) await update("evidence", ev.id, item); else await add("evidence", item);
+      onSaved?.();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
   };
   return (
     <div className="space-y-3">
@@ -186,6 +193,7 @@ export function EvidenceForm({ initial, workEntryId, onSaved }: { initial?: Evid
       <Field label="Link (paste URL)"><Input value={ev.url} onChange={(e) => set({ url: e.target.value })} placeholder="https://…" /></Field>
       <Field label="Or upload a file"><Input type="file" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></Field>
       <Field label="Description"><Textarea value={ev.description} onChange={(e) => set({ description: e.target.value })} /></Field>
+      {error && <p className="text-sm text-red-600">{error}</p>}
       <Button onClick={save} disabled={busy} className="w-full justify-center">{busy ? "Saving…" : "Save evidence"}</Button>
     </div>
   );

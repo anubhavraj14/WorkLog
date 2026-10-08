@@ -183,9 +183,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const uploadFile = async (file: File): Promise<string> => {
     if (mode === "cloud" && sb && userId) {
-      const path = `${userId}/${uid()}-${file.name}`;
-      const { error } = await sb.storage.from("evidence").upload(path, file);
-      if (error) throw error;
+      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      const path = `${userId}/${uid()}-${safeName}`;
+      const { error } = await sb.storage.from("evidence").upload(path, file, { contentType: file.type });
+      if (error) throw new Error(`Upload failed: ${error.message}`);
       return sb.storage.from("evidence").getPublicUrl(path).data.publicUrl;
     }
     return new Promise((res) => {
