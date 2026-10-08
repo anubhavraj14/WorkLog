@@ -26,22 +26,58 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
   const dialog = useDialog();
   const [e, setE] = useState<WorkEntry>(initial ? { ...initial } : blankEntry());
   const [tagsRaw, setTagsRaw] = useState((initial?.tags ?? []).join(", "));
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [saving, setSaving] = useState(false);
   const set = (p: Partial<WorkEntry>) => setE((prev) => ({ ...prev, ...p }));
   const dur = e.duration_min || durationBetween(e.start_time, e.end_time);
   const split = splitWorkMinutes({ ...e, duration_min: dur }, settings);
   const applyTemplate = (id: string) => {
+    setSelectedTemplateId(id);
     const template = settings.work_templates.find((item) => item.id === id);
     if (!template) return;
-    set({ title: template.title, description: template.description, project_id: template.project_id, category: template.category, priority: template.priority, tags: template.tags });
+    set({
+      title: template.title,
+      description: template.description,
+      project_id: template.project_id,
+      category: template.category,
+      status: template.status ?? e.status,
+      priority: template.priority,
+      start_time: template.start_time ?? e.start_time,
+      end_time: template.end_time ?? e.end_time,
+      duration_min: template.duration_min ?? e.duration_min,
+      extra_reason: template.extra_reason ?? "",
+      tags: template.tags,
+      accomplishments: template.accomplishments ?? "",
+      issues_found: template.issues_found ?? "",
+      notes: template.notes ?? "",
+    });
     setTagsRaw(template.tags.join(", "));
+    if (template.accomplishments || template.issues_found || template.notes) setShowMore(true);
   };
   const saveTemplate = async () => {
     if (!e.title.trim()) return void dialog.alert("Enter a task title before saving a template.");
-    const name = (await dialog.prompt("Choose a name for this reusable work template.", e.title, "Save work template"))?.trim();
+    const selectedTemplate = settings.work_templates.find((item) => item.id === selectedTemplateId);
+    const name = (await dialog.prompt("Choose a name for this reusable work template.", selectedTemplate?.name ?? e.title, "Save work template"))?.trim();
     if (!name) return;
-    const template = { id: uid(), name, title: e.title, description: e.description, project_id: e.project_id, category: e.category, priority: e.priority, tags: tagsRaw.split(",").map((tag) => tag.trim()).filter(Boolean) };
-    await saveSettings({ ...settings, work_templates: [...settings.work_templates, template] });
+    const existing = settings.work_templates.find((item) => item.name.toLowerCase() === name.toLowerCase());
+    const template = {
+      id: existing?.id ?? uid(), name, title: e.title, description: e.description, project_id: e.project_id,
+      category: e.category, status: e.status, priority: e.priority, start_time: e.start_time,
+      end_time: e.end_time, duration_min: dur, extra_reason: e.extra_reason,
+      tags: tagsRaw.split(",").map((tag) => tag.trim()).filter(Boolean), accomplishments: e.accomplishments,
+      issues_found: e.issues_found, notes: e.notes,
+    };
+    const work_templates = existing
+      ? settings.work_templates.map((item) => item.id === existing.id ? template : item)
+      : [...settings.work_templates, template];
+    await saveSettings({ ...settings, work_templates });
+    setSelectedTemplateId(template.id);
+  };
+  const deleteTemplate = async () => {
+    const template = settings.work_templates.find((item) => item.id === selectedTemplateId);
+    if (!template || !await dialog.confirm(`Delete the “${template.name}” template?`, { title: "Delete template?", destructive: true })) return;
+    await saveSettings({ ...settings, work_templates: settings.work_templates.filter((item) => item.id !== template.id) });
+    setSelectedTemplateId("");
   };
 
   const save = async () => {
@@ -63,10 +99,13 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
       <div className="space-y-3">
         {!initial && settings.work_templates.length > 0 && (
           <Field label="Start from a reusable template">
-            <Select defaultValue="" onChange={(ev) => applyTemplate(ev.target.value)}>
-              <option value="">Choose a template…</option>
-              {settings.work_templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
-            </Select>
+            <div className="flex gap-2">
+              <Select value={selectedTemplateId} onChange={(ev) => applyTemplate(ev.target.value)}>
+                <option value="">Choose a template…</option>
+                {settings.work_templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+              </Select>
+              {selectedTemplateId && <Button variant="danger" onClick={deleteTemplate}>Delete</Button>}
+            </div>
           </Field>
         )}
         <Field label="What did you work on?">

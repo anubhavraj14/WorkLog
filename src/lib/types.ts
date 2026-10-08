@@ -119,8 +119,16 @@ export interface WorkTemplate {
   description: string;
   project_id: ID | null;
   category: WorkCategory;
+  status?: WorkStatus;
   priority: Priority;
+  start_time?: string;
+  end_time?: string;
+  duration_min?: number;
+  extra_reason?: string;
   tags: string[];
+  accomplishments?: string;
+  issues_found?: string;
+  notes?: string;
 }
 
 export interface Settings {
