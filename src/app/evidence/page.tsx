@@ -16,6 +16,14 @@ export default function EvidencePage() {
   const [edit, setEdit] = useState<Evidence | null>(null);
   const list = [...data.evidence].sort((a, b) => b.date.localeCompare(a.date));
   const taskName = (id: string | null) => data.workEntries.find((w) => w.id === id)?.title;
+  const deleteEvidence = async (id: string) => {
+    if (!confirm("Delete this evidence and its uploaded file?")) return;
+    try {
+      await remove("evidence", id);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to delete evidence");
+    }
+  };
 
   return (
     <div>
@@ -39,7 +47,7 @@ export default function EvidencePage() {
             )}
             <div className="mt-auto flex gap-2 border-t border-zinc-100 pt-2 text-xs text-zinc-500 dark:border-zinc-800">
               <button onClick={() => setEdit(ev)} className="hover:text-indigo-600">Edit</button>
-              <button onClick={() => confirm("Delete this evidence?") && remove("evidence", ev.id)} className="hover:text-red-600">Delete</button>
+              <button onClick={() => deleteEvidence(ev.id)} className="hover:text-red-600">Delete</button>
             </div>
           </Card>
         ))}

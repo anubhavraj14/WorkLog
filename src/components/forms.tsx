@@ -161,8 +161,9 @@ export function EvidenceForm({ initial, workEntryId, onSaved }: { initial?: Evid
     setError(null);
     try {
       let url = ev.url;
-      if (file) url = await uploadFile(file);
-      const item = { ...ev, url };
+      let file_path = ev.file_path;
+      if (file) ({ url, path: file_path } = await uploadFile(file));
+      const item = { ...ev, url, file_path };
       if (initial) await update("evidence", ev.id, item); else await add("evidence", item);
       onSaved?.();
     } catch (e) {

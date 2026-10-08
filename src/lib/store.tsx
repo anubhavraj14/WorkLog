@@ -4,6 +4,7 @@ import { Data, Settings, ID } from "./types";
 import { sampleData } from "./demo-data";
 import { getSupabase, isSupabaseConfigured } from "./supabase";
 import { uid } from "./utils";
+import { compressImage } from "./image-compression";
 
 const TABLE: Record<keyof Data, string> = {
   projects: "projects",
@@ -36,7 +37,7 @@ interface Store {
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string, name: string) => Promise<string | null>;
   signOut: () => Promise<void>;
-  uploadFile: (file: File) => Promise<string>;
+  uploadFile: (file: File) => Promise<{ url: string; path: string }>;
   refresh: () => Promise<void>;
 }
 
@@ -122,7 +123,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const remove: Store["remove"] = async (key, id) => {
     if (mode === "cloud" && sb && userId) {
-      await sb.from(TABLE[key]).delete().eq("id", id);
+      if (key === "evidence") {
+        const evidence = data.evidence.find((item) => item.id === id);
+        const marker = "/storage/v1/object/public/evidence/";
+        const encodedPath = evidence?.url.includes(marker) ? evidence.url.split(marker)[1]?.split("?")[0] : "";
+        const path = evidence?.file_path || (encodedPath ? decodeURIComponent(encodedPath) : "");
+        if (path.startsWith(`${userId}/`)) {
+          const { error } = await sb.storage.from("evidence").remove([path]);
+          if (error) throw new Error(`File deletion failed: ${error.message}`);
+        }
+      }
+      const { error } = await sb.from(TABLE[key]).delete().eq("id", id);
+      if (error) throw new Error(`Deletion failed: ${error.message}`);
       await loadCloud(userId);
     } else persistDemo({ ...data, [key]: (data[key] as { id: ID }[]).filter((r) => r.id !== id) } as Data);
   };
@@ -181,19 +193,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   };
   const signOut = async () => { await sb?.auth.signOut(); };
 
-  const uploadFile = async (file: File): Promise<string> => {
+  const uploadFile: Store["uploadFile"] = async (file) => {
+    const upload = await compressImage(file);
     if (mode === "cloud" && sb && userId) {
-      const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+      const safeName = upload.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
       const path = `${userId}/${uid()}-${safeName}`;
-      const { error } = await sb.storage.from("evidence").upload(path, file, file.type ? { contentType: file.type } : undefined);
+      const { error } = await sb.storage.from("evidence").upload(path, upload, upload.type ? { contentType: upload.type } : undefined);
       if (error) throw new Error(`Upload failed: ${error.message}`);
-      return sb.storage.from("evidence").getPublicUrl(path).data.publicUrl;
+      const url = sb.storage.from("evidence").getPublicUrl(path).data.publicUrl;
+      return { url, path };
     }
-    return new Promise((res) => {
+    const url = await new Promise<string>((res) => {
       const r = new FileReader();
       r.onload = () => res(String(r.result));
-      r.readAsDataURL(file);
+      r.readAsDataURL(upload);
     });
+    return { url, path: "" };
   };
 
   const refresh = async () => { if (mode === "cloud" && userId) await loadCloud(userId); };

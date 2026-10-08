@@ -7,6 +7,7 @@ import { Card, Button, StatusBadge, PriorityBadge, CategoryBadge, TagPill, Modal
 import { WorkEntryForm, EvidenceForm } from "@/components/forms";
 import { useProjectName } from "@/components/lists";
 import { Pencil, Trash2, Plus, ExternalLink } from "lucide-react";
+import { Evidence } from "@/lib/types";
 
 export default function EntryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -15,12 +16,21 @@ export default function EntryDetail() {
   const projName = useProjectName();
   const [editing, setEditing] = useState(false);
   const [addingEvidence, setAddingEvidence] = useState(false);
+  const [editingEvidence, setEditingEvidence] = useState<Evidence | null>(null);
   const e = data.workEntries.find((w) => w.id === id);
   if (!e) return <EmptyState text="Work entry not found." action={<Button href="/log">Back to log</Button>} />;
 
   const evidence = data.evidence.filter((ev) => ev.work_entry_id === e.id);
   const meetings = data.meetings.filter((m) => m.date === e.date && (m.project_id === e.project_id || !e.project_id));
   const blockers = data.blockers.filter((b) => b.project_id === e.project_id && b.status !== "Resolved");
+  const deleteEvidence = async (evidenceId: string) => {
+    if (!confirm("Delete this evidence and its uploaded file?")) return;
+    try {
+      await remove("evidence", evidenceId);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Unable to delete evidence");
+    }
+  };
 
   const row = (label: string, value: React.ReactNode) =>
     value ? <div className="grid gap-1 sm:grid-cols-3"><dt className="text-xs font-medium uppercase text-zinc-400">{label}</dt><dd className="sm:col-span-2 text-sm whitespace-pre-wrap">{value}</dd></div> : null;
@@ -68,7 +78,11 @@ export default function EntryDetail() {
                 <span className="ml-2 text-xs text-zinc-500">{ev.type}</span>
                 {ev.description && <div className="text-xs text-zinc-500">{ev.description}</div>}
               </div>
-              {ev.url && <a href={ev.url} target="_blank" rel="noreferrer" className="text-indigo-600"><ExternalLink size={14} /></a>}
+              <div className="flex items-center gap-2">
+                {ev.url && <a href={ev.url} target="_blank" rel="noreferrer" aria-label="Open evidence" title="Open evidence" className="text-indigo-600"><ExternalLink size={14} /></a>}
+                <button onClick={() => setEditingEvidence(ev)} aria-label="Edit evidence" title="Edit evidence" className="text-zinc-500 hover:text-indigo-600"><Pencil size={14} /></button>
+                <button onClick={() => deleteEvidence(ev.id)} aria-label="Delete evidence" title="Delete evidence" className="text-zinc-500 hover:text-red-600"><Trash2 size={14} /></button>
+              </div>
             </div>
           ))}
           {!evidence.length && <p className="text-sm text-zinc-500">No evidence attached yet.</p>}
@@ -90,6 +104,7 @@ export default function EntryDetail() {
 
       <Modal wide open={editing} onClose={() => setEditing(false)} title="Edit Work Entry"><WorkEntryForm initial={e} onSaved={() => setEditing(false)} /></Modal>
       <Modal open={addingEvidence} onClose={() => setAddingEvidence(false)} title="Add Evidence"><EvidenceForm workEntryId={e.id} onSaved={() => setAddingEvidence(false)} /></Modal>
+      <Modal open={!!editingEvidence} onClose={() => setEditingEvidence(null)} title="Edit Evidence">{editingEvidence && <EvidenceForm initial={editingEvidence} onSaved={() => setEditingEvidence(null)} />}</Modal>
     </div>
   );
 }
