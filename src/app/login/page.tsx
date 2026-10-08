@@ -1,11 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { Button, Field, Input, Card } from "@/components/ui";
 
 export default function Login() {
-  const { signIn, signUp, mode } = useStore();
+  const { signIn, signUp, loading, userEmail } = useStore();
   const router = useRouter();
   const [isSignup, setIsSignup] = useState(false);
   const [name, setName] = useState("");
@@ -13,6 +13,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading && userEmail) router.replace("/");
+  }, [loading, router, userEmail]);
+
+  if (loading || userEmail) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-zinc-400">Loading WorkLog…</div>;
+  }
 
   const submit = async () => {
     setBusy(true);
