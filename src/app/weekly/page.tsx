@@ -6,20 +6,21 @@ import { useProjectName } from "@/components/lists";
 import { weekRange, inRange, fmtDuration, fmtDateShort, format } from "@/lib/utils";
 import { addWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { splitWorkMinutes } from "@/lib/work-hours";
 
 function Sec({ title, children }: { title: string; children: React.ReactNode }) {
   return <Card><h2 className="mb-2 text-sm font-semibold">{title}</h2><div className="space-y-1 text-sm">{children}</div></Card>;
 }
 
 export default function Weekly() {
-  const { data } = useStore();
+  const { data, settings } = useStore();
   const projName = useProjectName();
   const [offset, setOffset] = useState(0);
   const { start, end } = weekRange(addWeeks(new Date(), offset));
 
   const entries = data.workEntries.filter((e) => inRange(e.date, start, end));
   const total = entries.reduce((s, e) => s + e.duration_min, 0);
-  const extra = entries.filter((e) => e.is_extra).reduce((s, e) => s + e.duration_min, 0);
+  const extra = entries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0);
   const completed = entries.filter((e) => e.status === "Completed");
   const inProg = entries.filter((e) => e.status === "In Progress");
   const blockers = data.blockers.filter((b) => b.status !== "Resolved" || inRange(b.created_date, start, end));

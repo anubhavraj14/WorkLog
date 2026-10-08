@@ -7,9 +7,11 @@ import { useProjectName } from "@/components/lists";
 import { fmtDate } from "@/lib/utils";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Blocker } from "@/lib/types";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function Blockers() {
   const { data, remove } = useStore();
+  const dialog = useDialog();
   const projName = useProjectName();
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<Blocker | null>(null);
@@ -29,7 +31,7 @@ export default function Blockers() {
         </div>
         <div className="flex gap-1">
           <button onClick={() => setEdit(b)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"><Pencil size={14} /></button>
-          <button onClick={() => confirm("Delete this blocker?") && remove("blockers", b.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+          <button onClick={async () => (await dialog.confirm("This blocker will be permanently removed.", { title: "Delete blocker?", destructive: true })) && remove("blockers", b.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
         </div>
       </div>
     </Card>

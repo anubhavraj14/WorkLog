@@ -7,10 +7,11 @@ import { ProjectForm } from "@/components/forms";
 import { EntryRow } from "@/components/lists";
 import { fmtDateShort, fmtDuration, fmtTime, fmtDate } from "@/lib/utils";
 import { Pencil } from "lucide-react";
+import { splitWorkMinutes } from "@/lib/work-hours";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data } = useStore();
+  const { data, settings } = useStore();
   const [editing, setEditing] = useState(false);
   const p = data.projects.find((x) => x.id === id);
   if (!p) return <EmptyState text="Project not found." action={<Button href="/projects">Back</Button>} />;
@@ -20,7 +21,7 @@ export default function ProjectDetail() {
   const meetings = data.meetings.filter((m) => m.project_id === p.id).sort((a, b) => b.date.localeCompare(a.date));
   const evidence = data.evidence.filter((ev) => ev.project_id === p.id);
   const totalMin = entries.reduce((s, e) => s + e.duration_min, 0);
-  const extraMin = entries.filter((e) => e.is_extra).reduce((s, e) => s + e.duration_min, 0);
+  const extraMin = entries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0);
 
   const stat = (l: string, v: string | number) => (
     <Card className="p-3"><div className="text-lg font-semibold">{v}</div><div className="text-xs text-zinc-500">{l}</div></Card>

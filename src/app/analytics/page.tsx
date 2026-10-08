@@ -5,9 +5,10 @@ import { Card, PageHeader, Input } from "@/components/ui";
 import { HoursBar, Donut } from "@/components/charts";
 import { format, parseISO } from "@/lib/utils";
 import { startOfWeek, startOfMonth, subDays, format as f } from "date-fns";
+import { splitWorkMinutes } from "@/lib/work-hours";
 
 export default function Analytics() {
-  const { data } = useStore();
+  const { data, settings } = useStore();
   const [days, setDays] = useState(90);
   const since = f(subDays(new Date(), days), "yyyy-MM-dd");
   const entries = data.workEntries.filter((e) => e.date >= since);
@@ -26,7 +27,9 @@ export default function Analytics() {
     const mo = f(startOfMonth(parseISO(e.date)), "MMM yyyy");
     for (const [map, k] of [[byWeek, wk], [byMonth, mo]] as const) {
       const cur = map.get(k) ?? { hours: 0, extra: 0 };
-      if (e.is_extra) cur.extra += e.duration_min / 60; else cur.hours += e.duration_min / 60;
+      const split = splitWorkMinutes(e, settings);
+      cur.hours += split.normal / 60;
+      cur.extra += split.extra / 60;
       map.set(k, cur);
     }
   }
@@ -57,8 +60,8 @@ export default function Analytics() {
         <Card>
           <h2 className="mb-2 text-sm font-semibold">Summary</h2>
           <div className="space-y-1 text-sm">
-            <p>Normal hours: <b>{(entries.filter((e) => !e.is_extra).reduce((s, e) => s + e.duration_min, 0) / 60).toFixed(1)}h</b></p>
-            <p>Extra hours: <b className="text-purple-600">{(entries.filter((e) => e.is_extra).reduce((s, e) => s + e.duration_min, 0) / 60).toFixed(1)}h</b></p>
+            <p>Normal hours: <b>{(entries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).normal, 0) / 60).toFixed(1)}h</b></p>
+            <p>Extra hours: <b className="text-purple-600">{(entries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0) / 60).toFixed(1)}h</b></p>
             <p>Blocked entries: <b>{entries.filter((e) => e.status === "Blocked").length}</b></p>
             <p>Learning hours: <b>{(learningMin / 60).toFixed(1)}h</b></p>
           </div>

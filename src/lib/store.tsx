@@ -16,7 +16,7 @@ const TABLE: Record<keyof Data, string> = {
 };
 
 const emptyData = (): Data => ({ projects: [], workEntries: [], evidence: [], blockers: [], meetings: [], learning: [] });
-const defaultSettings = (): Settings => ({ name: "Anubhav", title: "", work_hours_per_day: 8, working_days: [1, 2, 3, 4, 5], theme: "system" });
+const defaultSettings = (): Settings => ({ name: "Anubhav", title: "", work_hours_per_day: 8, work_start_time: "10:00", work_end_time: "18:00", working_days: [1, 2, 3, 4, 5], work_templates: [], theme: "system" });
 
 const LS_DATA = "worklog:data";
 const LS_SETTINGS = "worklog:settings";
@@ -67,7 +67,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const raw = localStorage.getItem(LS_DATA);
     setData(raw ? JSON.parse(raw) : seedDemo());
     const s = localStorage.getItem(LS_SETTINGS);
-    if (s) setSettings(JSON.parse(s));
+    if (s) setSettings({ ...defaultSettings(), ...JSON.parse(s) });
     setMode("demo");
     setLoading(false);
   }, []);

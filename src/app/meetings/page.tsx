@@ -7,9 +7,11 @@ import { useProjectName } from "@/components/lists";
 import { fmtDate, fmtTime } from "@/lib/utils";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Meeting } from "@/lib/types";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function Meetings() {
   const { data, remove } = useStore();
+  const dialog = useDialog();
   const projName = useProjectName();
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<Meeting | null>(null);
@@ -34,7 +36,7 @@ export default function Meetings() {
               </div>
               <div className="flex gap-1">
                 <button onClick={() => setEdit(m)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"><Pencil size={14} /></button>
-                <button onClick={() => confirm("Delete this meeting?") && remove("meetings", m.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+                <button onClick={async () => (await dialog.confirm("This meeting will be permanently removed.", { title: "Delete meeting?", destructive: true })) && remove("meetings", m.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
               </div>
             </div>
           </Card>

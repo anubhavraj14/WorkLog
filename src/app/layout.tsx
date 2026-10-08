@@ -5,6 +5,7 @@ import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 import { Shell } from "@/components/shell";
 import { ThemeProvider } from "next-themes";
+import { DialogProvider } from "@/components/dialog-provider";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -21,9 +22,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <StoreProvider>
-            <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-zinc-500">Loading…</div>}>
-              <Shell>{children}</Shell>
-            </Suspense>
+            <DialogProvider>
+              <Suspense fallback={<div className="flex min-h-screen items-center justify-center text-sm text-zinc-500">Loading…</div>}>
+                <Shell>{children}</Shell>
+              </Suspense>
+            </DialogProvider>
           </StoreProvider>
         </ThemeProvider>
       </body>

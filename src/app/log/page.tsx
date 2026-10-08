@@ -8,11 +8,14 @@ import { useProjectName } from "@/components/lists";
 import { WorkEntryForm, MeetingForm } from "@/components/forms";
 import { Plus, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { WorkEntry, Meeting } from "@/lib/types";
+import { splitWorkMinutes } from "@/lib/work-hours";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function DailyLog() {
   const params = useSearchParams();
   const router = useRouter();
-  const { data, remove } = useStore();
+  const { data, settings, remove } = useStore();
+  const dialog = useDialog();
   const projName = useProjectName();
   const [date, setDate] = useState(params.get("d") ?? todayStr());
   const [edit, setEdit] = useState<WorkEntry | null>(null);
@@ -28,7 +31,7 @@ export default function DailyLog() {
   ].sort((a, b) => a.t.localeCompare(b.t));
 
   const total = entries.reduce((s, e) => s + e.duration_min, 0);
-  const extra = entries.filter((e) => e.is_extra).reduce((s, e) => s + e.duration_min, 0);
+  const extra = entries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0);
   const nav = (off: number) => setDate(format(addDays(parseISO(date), off), "yyyy-MM-dd"));
 
   return (
@@ -66,7 +69,7 @@ export default function DailyLog() {
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setEdit(it.w)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"><Pencil size={14} /></button>
-                    <button onClick={() => confirm("Delete this entry?") && remove("workEntries", it.w.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+                    <button onClick={async () => (await dialog.confirm("This work entry will be permanently removed.", { title: "Delete work entry?", destructive: true })) && remove("workEntries", it.w.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
                   </div>
                 </div>
               </Card>
@@ -80,7 +83,7 @@ export default function DailyLog() {
                   </div>
                   <div className="flex gap-1">
                     <button onClick={() => setEditMeeting(it.m)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"><Pencil size={14} /></button>
-                    <button onClick={() => confirm("Delete this meeting?") && remove("meetings", it.m.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+                    <button onClick={async () => (await dialog.confirm("This meeting will be permanently removed.", { title: "Delete meeting?", destructive: true })) && remove("meetings", it.m.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
                   </div>
                 </div>
               </Card>

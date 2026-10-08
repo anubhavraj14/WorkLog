@@ -6,9 +6,11 @@ import { LearningForm } from "@/components/forms";
 import { fmtDate, fmtDuration } from "@/lib/utils";
 import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { LearningEntry } from "@/lib/types";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function Learning() {
   const { data, remove } = useStore();
+  const dialog = useDialog();
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<LearningEntry | null>(null);
   const list = [...data.learning].sort((a, b) => b.date.localeCompare(a.date));
@@ -31,7 +33,7 @@ export default function Learning() {
               </div>
               <div className="flex gap-1">
                 <button onClick={() => setEdit(l)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"><Pencil size={14} /></button>
-                <button onClick={() => confirm("Delete this learning entry?") && remove("learning", l.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+                <button onClick={async () => (await dialog.confirm("This learning entry will be permanently removed.", { title: "Delete learning entry?", destructive: true })) && remove("learning", l.id)} className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
               </div>
             </div>
           </Card>

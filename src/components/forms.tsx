@@ -6,7 +6,9 @@ import {
   WORK_CATEGORIES, WORK_STATUSES, PRIORITIES, PROJECT_STATUSES, BLOCKER_STATUSES, EVIDENCE_TYPES,
 } from "@/lib/types";
 import { durationBetween, fmtDuration, todayStr, uid } from "@/lib/utils";
-import { Button, Field, Input, Select, Textarea, Seg, Switch, Section } from "./ui";
+import { splitWorkMinutes } from "@/lib/work-hours";
+import { Button, Field, Input, Select, Textarea, Seg, Section } from "./ui";
+import { useDialog } from "./dialog-provider";
 
 const now = () => {
   const d = new Date();
@@ -20,17 +22,34 @@ const blankEntry = (): WorkEntry => ({
 });
 
 export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry; quick?: boolean; onSaved?: () => void }) {
-  const { data, add, update } = useStore();
+  const { data, settings, add, update, saveSettings } = useStore();
+  const dialog = useDialog();
   const [e, setE] = useState<WorkEntry>(initial ? { ...initial } : blankEntry());
   const [tagsRaw, setTagsRaw] = useState((initial?.tags ?? []).join(", "));
   const [saving, setSaving] = useState(false);
   const set = (p: Partial<WorkEntry>) => setE((prev) => ({ ...prev, ...p }));
   const dur = e.duration_min || durationBetween(e.start_time, e.end_time);
+  const split = splitWorkMinutes({ ...e, duration_min: dur }, settings);
+  const applyTemplate = (id: string) => {
+    const template = settings.work_templates.find((item) => item.id === id);
+    if (!template) return;
+    set({ title: template.title, description: template.description, project_id: template.project_id, category: template.category, priority: template.priority, tags: template.tags });
+    setTagsRaw(template.tags.join(", "));
+  };
+  const saveTemplate = async () => {
+    if (!e.title.trim()) return void dialog.alert("Enter a task title before saving a template.");
+    const name = (await dialog.prompt("Choose a name for this reusable work template.", e.title, "Save work template"))?.trim();
+    if (!name) return;
+    const template = { id: uid(), name, title: e.title, description: e.description, project_id: e.project_id, category: e.category, priority: e.priority, tags: tagsRaw.split(",").map((tag) => tag.trim()).filter(Boolean) };
+    await saveSettings({ ...settings, work_templates: [...settings.work_templates, template] });
+  };
 
   const save = async () => {
-    if (!e.title.trim()) return alert("Please enter a task title");
+    if (!e.title.trim()) return void dialog.alert("Please enter a task title.");
     setSaving(true);
-    const item = { ...e, duration_min: durationBetween(e.start_time, e.end_time) || e.duration_min || 0, tags: tagsRaw.split(",").map((t) => t.trim()).filter(Boolean), project_id: e.project_id || null };
+    const duration_min = durationBetween(e.start_time, e.end_time) || e.duration_min || 0;
+    const { extra } = splitWorkMinutes({ ...e, duration_min }, settings);
+    const item = { ...e, duration_min, is_extra: extra > 0, tags: tagsRaw.split(",").map((t) => t.trim()).filter(Boolean), project_id: e.project_id || null };
     if (initial) await update("workEntries", e.id, item);
     else await add("workEntries", item);
     setSaving(false);
@@ -42,6 +61,14 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
     <div className="space-y-6">
       {/* Task */}
       <div className="space-y-3">
+        {!initial && settings.work_templates.length > 0 && (
+          <Field label="Start from a reusable template">
+            <Select defaultValue="" onChange={(ev) => applyTemplate(ev.target.value)}>
+              <option value="">Choose a template…</option>
+              {settings.work_templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
+            </Select>
+          </Field>
+        )}
         <Field label="What did you work on?">
           <Input autoFocus value={e.title} onChange={(ev) => set({ title: ev.target.value })} placeholder="e.g. Tested Ramp Creation Agent" className="text-[15px]" />
         </Field>
@@ -87,14 +114,11 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
             </>
           )}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3.5 py-3 dark:bg-zinc-800/60">
-          <div className="text-sm">
-            <span className="text-zinc-500">Duration</span>{" "}
-            <span className="font-semibold">{dur ? fmtDuration(dur) : "—"}</span>
-          </div>
-          <Switch checked={e.is_extra} onChange={(v) => set({ is_extra: v })} label="Extra hours" />
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-zinc-50 px-3.5 py-3 text-sm dark:bg-zinc-800/60">
+          <div><span className="text-zinc-500">Duration</span> <span className="font-semibold">{dur ? fmtDuration(dur) : "—"}</span></div>
+          {dur > 0 && <div><span className="text-zinc-500">Normal</span> <span className="font-semibold">{fmtDuration(split.normal)}</span> <span className="ml-2 text-zinc-500">Extra</span> <span className="font-semibold text-purple-600">{fmtDuration(split.extra)}</span></div>}
         </div>
-        {e.is_extra && (
+        {split.extra > 0 && (
           <Field label="Reason for extra hours">
             <Input value={e.extra_reason} onChange={(ev) => set({ extra_reason: ev.target.value })} placeholder="e.g. Additional testing requested" />
           </Field>
@@ -117,6 +141,7 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
         )
       )}
 
+      {!initial && <Button variant="ghost" onClick={saveTemplate} className="w-full justify-center">Save current details as template</Button>}
       <Button onClick={save} disabled={saving} className="w-full justify-center py-2.5">{saving ? "Saving…" : initial ? "Save changes" : "Log work"}</Button>
     </div>
   );
@@ -124,10 +149,11 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
 
 export function ProjectForm({ initial, onSaved }: { initial?: Project; onSaved?: () => void }) {
   const { add, update } = useStore();
+  const dialog = useDialog();
   const [p, setP] = useState<Project>(initial ?? { id: uid(), name: "", description: "", client: "", start_date: todayStr(), end_date: "", status: "Active", notes: "" });
   const set = (x: Partial<Project>) => setP((prev) => ({ ...prev, ...x }));
   const save = async () => {
-    if (!p.name.trim()) return alert("Enter a project name");
+    if (!p.name.trim()) return void dialog.alert("Enter a project name.");
     const payload = { ...p, end_date: p.end_date || null } as Project & { end_date: string | null };
     if (initial) await update("projects", p.id, payload); else await add("projects", payload);
     onSaved?.();
@@ -150,13 +176,14 @@ export function ProjectForm({ initial, onSaved }: { initial?: Project; onSaved?:
 
 export function EvidenceForm({ initial, workEntryId, onSaved }: { initial?: Evidence; workEntryId?: string; onSaved?: () => void }) {
   const { data, add, update, uploadFile } = useStore();
+  const dialog = useDialog();
   const [ev, setEv] = useState<Evidence>(initial ?? { id: uid(), name: "", type: "Link", url: "", file_path: "", project_id: null, work_entry_id: workEntryId ?? null, description: "", date: todayStr() });
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (x: Partial<Evidence>) => setEv((prev) => ({ ...prev, ...x }));
   const save = async () => {
-    if (!ev.name.trim()) return alert("Enter an evidence name");
+    if (!ev.name.trim()) return void dialog.alert("Enter an evidence name.");
     setBusy(true);
     setError(null);
     try {
@@ -202,10 +229,11 @@ export function EvidenceForm({ initial, workEntryId, onSaved }: { initial?: Evid
 
 export function BlockerForm({ initial, onSaved }: { initial?: Blocker; onSaved?: () => void }) {
   const { data, add, update } = useStore();
+  const dialog = useDialog();
   const [b, setB] = useState<Blocker>(initial ?? { id: uid(), title: "", project_id: null, waiting_for: "", description: "", status: "Open", created_date: todayStr(), resolution: "", resolution_date: "", resolved_by: "", resolution_notes: "" });
   const set = (x: Partial<Blocker>) => setB((prev) => ({ ...prev, ...x }));
   const save = async () => {
-    if (!b.title.trim()) return alert("Enter a blocker title");
+    if (!b.title.trim()) return void dialog.alert("Enter a blocker title.");
     if (initial) await update("blockers", b.id, b); else await add("blockers", b);
     onSaved?.();
   };
@@ -242,10 +270,11 @@ export function BlockerForm({ initial, onSaved }: { initial?: Blocker; onSaved?:
 
 export function MeetingForm({ initial, onSaved }: { initial?: Meeting; onSaved?: () => void }) {
   const { data, add, update } = useStore();
+  const dialog = useDialog();
   const [m, setM] = useState<Meeting>(initial ?? { id: uid(), name: "", date: todayStr(), start_time: "", end_time: "", attendees: "", project_id: null, discussion: "", decisions: "", action_items: "", follow_up_date: "", notes: "" });
   const set = (x: Partial<Meeting>) => setM((prev) => ({ ...prev, ...x }));
   const save = async () => {
-    if (!m.name.trim()) return alert("Enter a meeting name");
+    if (!m.name.trim()) return void dialog.alert("Enter a meeting name.");
     if (initial) await update("meetings", m.id, m); else await add("meetings", m);
     onSaved?.();
   };
@@ -280,10 +309,11 @@ export function MeetingForm({ initial, onSaved }: { initial?: Meeting; onSaved?:
 
 export function LearningForm({ initial, onSaved }: { initial?: LearningEntry; onSaved?: () => void }) {
   const { add, update } = useStore();
+  const dialog = useDialog();
   const [l, setL] = useState<LearningEntry>(initial ?? { id: uid(), topic: "", course: "", date: todayStr(), duration_min: 0, learned: "", notes: "", certificate_url: "" });
   const set = (x: Partial<LearningEntry>) => setL((prev) => ({ ...prev, ...x }));
   const save = async () => {
-    if (!l.topic.trim()) return alert("Enter a topic");
+    if (!l.topic.trim()) return void dialog.alert("Enter a topic.");
     if (initial) await update("learning", l.id, l); else await add("learning", l);
     onSaved?.();
   };

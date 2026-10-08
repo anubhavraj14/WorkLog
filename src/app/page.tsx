@@ -7,6 +7,7 @@ import { Card, Button, BlockerBadge, Modal, PageHeader } from "@/components/ui";
 import { EntryRow, useProjectName } from "@/components/lists";
 import { HoursBar } from "@/components/charts";
 import { WorkEntryForm, ProjectForm, EvidenceForm, MeetingForm, BlockerForm } from "@/components/forms";
+import { splitWorkMinutes } from "@/lib/work-hours";
 import { Plus, Clock3, Zap, CheckCircle2, Loader, ShieldAlert, FolderKanban, FlaskConical, Users, FileBarChart } from "lucide-react";
 
 export default function Dashboard() {
@@ -20,7 +21,7 @@ export default function Dashboard() {
   const weekEntries = data.workEntries.filter((e) => inRange(e.date, start, end));
   const todayMin = todayEntries.reduce((s, e) => s + e.duration_min, 0);
   const weekMin = weekEntries.reduce((s, e) => s + e.duration_min, 0);
-  const extraMin = data.workEntries.filter((e) => e.is_extra && inRange(e.date, start, end)).reduce((s, e) => s + e.duration_min, 0);
+  const extraMin = weekEntries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0);
   const openBlockers = data.blockers.filter((b) => b.status !== "Resolved");
   const recent = [...data.workEntries].sort((a, b) => b.date.localeCompare(a.date) || b.start_time.localeCompare(a.start_time)).slice(0, 6);
 
@@ -31,8 +32,8 @@ export default function Dashboard() {
     const es = weekEntries.filter((e) => e.date === ds);
     days.push({
       label: format(d, "EEE"),
-      hours: es.filter((e) => !e.is_extra).reduce((s, e) => s + e.duration_min, 0) / 60,
-      extra: es.filter((e) => e.is_extra).reduce((s, e) => s + e.duration_min, 0) / 60,
+      hours: es.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).normal, 0) / 60,
+      extra: es.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0) / 60,
     });
   }
 

@@ -4,12 +4,14 @@ import { useStore } from "@/lib/store";
 import { Card, Button, PageHeader, Field, Input, Select } from "@/components/ui";
 import { download } from "@/lib/report";
 import { useTheme } from "next-themes";
+import { useDialog } from "@/components/dialog-provider";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function SettingsPage() {
-  const { settings, saveSettings, exportAll, importAll, clearSampleData, mode, userEmail, signOut } = useStore();
+  const { settings, saveSettings, exportAll, importAll, mode, userEmail, signOut } = useStore();
   const { setTheme } = useTheme();
+  const dialog = useDialog();
   const [s, setS] = useState(settings);
   const [saved, setSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,6 +37,10 @@ export default function SettingsPage() {
       <Card className="space-y-3">
         <h2 className="text-sm font-semibold">Working Hours</h2>
         <Field label="Normal hours per day"><Input type="number" min={1} max={16} value={s.work_hours_per_day} onChange={(e) => set({ work_hours_per_day: Number(e.target.value) })} /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Work starts"><Input type="time" value={s.work_start_time} onChange={(e) => set({ work_start_time: e.target.value })} /></Field>
+          <Field label="Work ends"><Input type="time" value={s.work_end_time} onChange={(e) => set({ work_end_time: e.target.value })} /></Field>
+        </div>
         <div>
           <span className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Working days</span>
           <div className="flex gap-1.5">
@@ -51,19 +57,30 @@ export default function SettingsPage() {
         </Field>
       </Card>
 
+      {s.work_templates.length > 0 && (
+        <Card className="space-y-3">
+          <h2 className="text-sm font-semibold">Work Templates</h2>
+          {s.work_templates.map((template) => (
+            <div key={template.id} className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 p-2.5 text-sm dark:border-zinc-800">
+              <span>{template.name}</span>
+              <button onClick={() => set({ work_templates: s.work_templates.filter((item) => item.id !== template.id) })} className="text-xs text-red-600 hover:underline">Delete</button>
+            </div>
+          ))}
+        </Card>
+      )}
+
       <Button onClick={save} className="w-full justify-center">{saved ? "Saved" : "Save settings"}</Button>
 
       <Card className="space-y-3">
         <h2 className="text-sm font-semibold">Data Management</h2>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={() => download("worklog-backup.json", exportAll(), "application/json")}>Export all data (JSON)</Button>
-          <Button variant="ghost" onClick={() => fileRef.current?.click()}>Import data</Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="ghost" onClick={() => download("worklog-backup.json", exportAll(), "application/json")} className="justify-center">Export all data (JSON)</Button>
+          <Button variant="ghost" onClick={() => fileRef.current?.click()} className="justify-center">Import data</Button>
           <input ref={fileRef} type="file" accept=".json" className="hidden" onChange={async (e) => {
             const f = e.target.files?.[0];
-            if (f && confirm("Import data? Existing records are kept.")) await importAll(await f.text());
+            if (f && await dialog.confirm("Imported records will be added alongside your existing data.", { title: "Import this backup?" })) await importAll(await f.text());
             e.target.value = "";
           }} />
-          <Button variant="danger" onClick={() => confirm("Remove all sample/demo records?") && clearSampleData()}>Clear sample data</Button>
         </div>
         {mode === "cloud" && <Button variant="ghost" onClick={signOut}>Sign out</Button>}
         <p className="text-xs text-zinc-500">

@@ -112,11 +112,25 @@ export interface LearningEntry {
   is_sample?: boolean;
 }
 
+export interface WorkTemplate {
+  id: ID;
+  name: string;
+  title: string;
+  description: string;
+  project_id: ID | null;
+  category: WorkCategory;
+  priority: Priority;
+  tags: string[];
+}
+
 export interface Settings {
   name: string;
   title: string;
   work_hours_per_day: number;
+  work_start_time: string;
+  work_end_time: string;
   working_days: number[]; // 0=Sun
+  work_templates: WorkTemplate[];
   theme: "light" | "dark" | "system";
 }
 

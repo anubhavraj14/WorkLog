@@ -8,11 +8,13 @@ import { WorkEntryForm, EvidenceForm } from "@/components/forms";
 import { useProjectName } from "@/components/lists";
 import { Pencil, Trash2, Plus, ExternalLink } from "lucide-react";
 import { Evidence } from "@/lib/types";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function EntryDetail() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { data, remove } = useStore();
+  const dialog = useDialog();
   const projName = useProjectName();
   const [editing, setEditing] = useState(false);
   const [addingEvidence, setAddingEvidence] = useState(false);
@@ -24,11 +26,11 @@ export default function EntryDetail() {
   const meetings = data.meetings.filter((m) => m.date === e.date && (m.project_id === e.project_id || !e.project_id));
   const blockers = data.blockers.filter((b) => b.project_id === e.project_id && b.status !== "Resolved");
   const deleteEvidence = async (evidenceId: string) => {
-    if (!confirm("Delete this evidence and its uploaded file?")) return;
+    if (!await dialog.confirm("The evidence record and its uploaded file will be permanently removed.", { title: "Delete evidence?", destructive: true })) return;
     try {
       await remove("evidence", evidenceId);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to delete evidence");
+      await dialog.alert(error instanceof Error ? error.message : "Unable to delete evidence", "Deletion failed");
     }
   };
 
@@ -50,7 +52,7 @@ export default function EntryDetail() {
         </div>
         <div className="flex gap-2">
           <Button variant="ghost" onClick={() => setEditing(true)}><Pencil size={14} /> Edit</Button>
-          <Button variant="danger" onClick={() => { if (confirm("Delete this entry?")) { remove("workEntries", e.id); router.push("/log"); } }}><Trash2 size={14} /></Button>
+          <Button variant="danger" onClick={async () => { if (await dialog.confirm("This work entry will be permanently removed.", { title: "Delete work entry?", destructive: true })) { await remove("workEntries", e.id); router.push("/log"); } }}><Trash2 size={14} /></Button>
         </div>
       </div>
 

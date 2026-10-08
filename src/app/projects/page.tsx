@@ -7,9 +7,11 @@ import { ProjectForm } from "@/components/forms";
 import { fmtDateShort, fmtDuration } from "@/lib/utils";
 import { Plus } from "lucide-react";
 import { Project } from "@/lib/types";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function Projects() {
   const { data, remove } = useStore();
+  const dialog = useDialog();
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<Project | null>(null);
 
@@ -35,7 +37,7 @@ export default function Projects() {
                 <span>{entries.length} tasks · {fmtDuration(mins)}</span>
                 <span className="flex gap-1">
                   <button onClick={() => setEdit(p)} className="hover:text-indigo-600">Edit</button>
-                  <button onClick={() => confirm("Delete this project? Entries will keep their data but lose the project link.") && remove("projects", p.id)} className="hover:text-red-600">Delete</button>
+                  <button onClick={async () => (await dialog.confirm("The project will be removed. Existing work entries will keep their data but lose the project link.", { title: "Delete project?", destructive: true })) && remove("projects", p.id)} className="hover:text-red-600">Delete</button>
                 </span>
               </div>
             </Card>

@@ -8,20 +8,22 @@ import { useProjectName } from "@/components/lists";
 import { fmtDate } from "@/lib/utils";
 import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { Evidence } from "@/lib/types";
+import { useDialog } from "@/components/dialog-provider";
 
 export default function EvidencePage() {
   const { data, remove } = useStore();
+  const dialog = useDialog();
   const projName = useProjectName();
   const [adding, setAdding] = useState(false);
   const [edit, setEdit] = useState<Evidence | null>(null);
   const list = [...data.evidence].sort((a, b) => b.date.localeCompare(a.date));
   const taskName = (id: string | null) => data.workEntries.find((w) => w.id === id)?.title;
   const deleteEvidence = async (id: string) => {
-    if (!confirm("Delete this evidence and its uploaded file?")) return;
+    if (!await dialog.confirm("The evidence record and its uploaded file will be permanently removed.", { title: "Delete evidence?", destructive: true })) return;
     try {
       await remove("evidence", id);
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Unable to delete evidence");
+      await dialog.alert(error instanceof Error ? error.message : "Unable to delete evidence", "Deletion failed");
     }
   };
 

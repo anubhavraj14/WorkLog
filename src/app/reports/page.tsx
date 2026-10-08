@@ -34,7 +34,7 @@ export default function Reports() {
 
   const gen = () => {
     const { start, end } = range();
-    setReport(generateReport(data, start, end, settings.name));
+    setReport(generateReport(data, settings, start, end, settings.name));
   };
 
   const copy = async () => {

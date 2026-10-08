@@ -1,5 +1,6 @@
-import { Data, WorkEntry } from "./types";
+import { Data, Settings, WorkEntry } from "./types";
 import { fmtDate, fmtDateShort, fmtDuration, fmtTime, inRange } from "./utils";
+import { splitWorkMinutes } from "./work-hours";
 
 export interface ReportResult {
   title: string;
@@ -9,7 +10,7 @@ export interface ReportResult {
   extraMin: number;
 }
 
-export function generateReport(data: Data, start: Date, end: Date, name: string): ReportResult {
+export function generateReport(data: Data, settings: Settings, start: Date, end: Date, name: string): ReportResult {
   const entries = data.workEntries.filter((e) => inRange(e.date, start, end)).sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time));
   const blockers = data.blockers.filter((b) => inRange(b.created_date, start, end) || (b.status !== "Resolved"));
   const meetings = data.meetings.filter((m) => inRange(m.date, start, end));
@@ -21,7 +22,7 @@ export function generateReport(data: Data, start: Date, end: Date, name: string)
   const inProgress = entries.filter((e) => e.status === "In Progress" || e.status === "Blocked");
   const withIssues = entries.filter((e) => e.issues_found?.trim());
   const totalMin = entries.reduce((s, e) => s + e.duration_min, 0);
-  const extraMin = entries.filter((e) => e.is_extra).reduce((s, e) => s + e.duration_min, 0);
+  const extraMin = entries.reduce((sum, entry) => sum + splitWorkMinutes(entry, settings).extra, 0);
   const pending = data.workEntries.filter((e) => e.status === "Planned" || e.status === "In Progress");
 
   const title = `Work Report — ${name} (${fmtDateShort(start.toISOString().slice(0, 10))} – ${fmtDateShort(end.toISOString().slice(0, 10))})`;

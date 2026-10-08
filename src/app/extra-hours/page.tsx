@@ -5,27 +5,28 @@ import { Card, PageHeader, EmptyState } from "@/components/ui";
 import { useProjectName } from "@/components/lists";
 import { fmtDate, fmtDuration, todayStr, weekRange, monthRange, inRange, fmtTime } from "@/lib/utils";
 import { Zap } from "lucide-react";
+import { splitWorkMinutes } from "@/lib/work-hours";
 
 export default function ExtraHours() {
-  const { data } = useStore();
+  const { data, settings } = useStore();
   const projName = useProjectName();
   const t = todayStr();
   const wk = weekRange(new Date());
   const mo = monthRange(new Date());
 
-  const sum = (fn: (e: (typeof data.workEntries)[0]) => boolean) =>
-    data.workEntries.filter(fn).reduce((s, e) => s + e.duration_min, 0);
+  const sum = (fn: (e: (typeof data.workEntries)[0]) => boolean, kind: "normal" | "extra") =>
+    data.workEntries.filter(fn).reduce((total, entry) => total + splitWorkMinutes(entry, settings)[kind], 0);
 
   const stats = [
-    { label: "Today's normal hours", v: sum((e) => e.date === t && !e.is_extra) },
-    { label: "Today's extra hours", v: sum((e) => e.date === t && e.is_extra), accent: true },
-    { label: "This week normal", v: sum((e) => inRange(e.date, wk.start, wk.end) && !e.is_extra) },
-    { label: "This week extra", v: sum((e) => inRange(e.date, wk.start, wk.end) && e.is_extra), accent: true },
-    { label: "This month normal", v: sum((e) => inRange(e.date, mo.start, mo.end) && !e.is_extra) },
-    { label: "This month extra", v: sum((e) => inRange(e.date, mo.start, mo.end) && e.is_extra), accent: true },
+    { label: "Today's normal hours", v: sum((e) => e.date === t, "normal") },
+    { label: "Today's extra hours", v: sum((e) => e.date === t, "extra"), accent: true },
+    { label: "This week normal", v: sum((e) => inRange(e.date, wk.start, wk.end), "normal") },
+    { label: "This week extra", v: sum((e) => inRange(e.date, wk.start, wk.end), "extra"), accent: true },
+    { label: "This month normal", v: sum((e) => inRange(e.date, mo.start, mo.end), "normal") },
+    { label: "This month extra", v: sum((e) => inRange(e.date, mo.start, mo.end), "extra"), accent: true },
   ];
 
-  const extraEntries = data.workEntries.filter((e) => e.is_extra).sort((a, b) => b.date.localeCompare(a.date));
+  const extraEntries = data.workEntries.filter((entry) => splitWorkMinutes(entry, settings).extra > 0).sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <div>
@@ -54,7 +55,7 @@ export default function ExtraHours() {
                 <td className="p-3">{e.title}</td>
                 <td className="p-3">{projName(e.project_id)}</td>
                 <td className="p-3 whitespace-nowrap">{e.start_time && e.end_time ? `${fmtTime(e.start_time)}–${fmtTime(e.end_time)}` : "—"}</td>
-                <td className="p-3 font-medium text-purple-600">{fmtDuration(e.duration_min)}</td>
+                <td className="p-3 font-medium text-purple-600">{fmtDuration(splitWorkMinutes(e, settings).extra)}</td>
                 <td className="p-3 text-zinc-500">{e.extra_reason || "—"}</td>
               </tr>
             ))}
