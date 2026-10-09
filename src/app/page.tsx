@@ -74,7 +74,7 @@ export default function Dashboard() {
 
       <Card>
         <h2 className="mb-2 text-sm font-semibold">Weekly Work Overview</h2>
-        <HoursBar data={days} />
+        <HoursBar data={days} palette={settings.chart_palette} />
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">

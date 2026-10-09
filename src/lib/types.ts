@@ -131,6 +131,8 @@ export interface WorkTemplate {
   notes?: string;
 }
 
+export type ChartPalette = "original-violet" | "violet-rose" | "blue-cyan" | "emerald-amber" | "slate-violet";
+
 export interface Settings {
   name: string;
   title: string;
@@ -140,6 +142,7 @@ export interface Settings {
   working_days: number[]; // 0=Sun
   work_templates: WorkTemplate[];
   theme: "light" | "dark" | "system";
+  chart_palette: ChartPalette;
 }
 
 export interface Data {

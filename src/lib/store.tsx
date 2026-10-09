@@ -16,7 +16,7 @@ const TABLE: Record<keyof Data, string> = {
 };
 
 const emptyData = (): Data => ({ projects: [], workEntries: [], evidence: [], blockers: [], meetings: [], learning: [] });
-const defaultSettings = (): Settings => ({ name: "Anubhav", title: "", work_hours_per_day: 8, work_start_time: "10:00", work_end_time: "18:00", working_days: [1, 2, 3, 4, 5], work_templates: [], theme: "system" });
+const defaultSettings = (): Settings => ({ name: "Anubhav", title: "", work_hours_per_day: 8, work_start_time: "10:00", work_end_time: "18:00", working_days: [1, 2, 3, 4, 5], work_templates: [], theme: "system", chart_palette: "violet-rose" });
 
 const LS_DATA = "worklog:data";
 const LS_SETTINGS = "worklog:settings";

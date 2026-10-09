@@ -5,6 +5,7 @@ import { Card, Button, PageHeader, Field, Input, Select } from "@/components/ui"
 import { download } from "@/lib/report";
 import { useTheme } from "next-themes";
 import { useDialog } from "@/components/dialog-provider";
+import { CHART_PALETTES } from "@/components/charts";
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -54,6 +55,19 @@ export default function SettingsPage() {
           <Select value={s.theme} onChange={(e) => set({ theme: e.target.value as typeof s.theme })}>
             <option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option>
           </Select>
+        </Field>
+        <Field label="Chart colors">
+          <div className="grid grid-cols-2 gap-2">
+            {CHART_PALETTES.map((palette) => (
+              <button key={palette.id} type="button" onClick={() => set({ chart_palette: palette.id })} className={`flex items-center gap-2 rounded-xl border p-2.5 text-left text-sm transition-colors ${s.chart_palette === palette.id ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/40" : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-700 dark:hover:border-zinc-600"}`}>
+                <span className="flex overflow-hidden rounded-full">
+                  <span className="h-5 w-5" style={{ backgroundColor: palette.working }} />
+                  <span className="h-5 w-5" style={{ backgroundColor: palette.extra }} />
+                </span>
+                <span className="font-medium">{palette.name}</span>
+              </button>
+            ))}
+          </div>
         </Field>
       </Card>
 

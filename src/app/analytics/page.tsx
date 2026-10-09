@@ -52,8 +52,8 @@ export default function Analytics() {
       </PageHeader>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card><h2 className="mb-2 text-sm font-semibold">Hours per Week</h2><HoursBar data={toArr(byWeek)} /></Card>
-        <Card><h2 className="mb-2 text-sm font-semibold">Hours per Month</h2><HoursBar data={toArr(byMonth)} /></Card>
+        <Card><h2 className="mb-2 text-sm font-semibold">Hours per Week</h2><HoursBar data={toArr(byWeek)} palette={settings.chart_palette} /></Card>
+        <Card><h2 className="mb-2 text-sm font-semibold">Hours per Month</h2><HoursBar data={toArr(byMonth)} palette={settings.chart_palette} /></Card>
         <Card><h2 className="mb-2 text-sm font-semibold">Work by Project (hours)</h2><Donut data={donut(group((e) => projName(e.project_id)))} /></Card>
         <Card><h2 className="mb-2 text-sm font-semibold">Work by Category (hours)</h2><Donut data={donut(group((e) => e.category))} /></Card>
         <Card><h2 className="mb-2 text-sm font-semibold">Tasks by Status</h2><Donut data={[...statusCount.entries()].map(([name, value]) => ({ name, value }))} /></Card>
