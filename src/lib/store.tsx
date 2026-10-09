@@ -107,14 +107,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const add: Store["add"] = async (key, item) => {
     if (mode === "cloud" && sb && userId) {
-      await sb.from(TABLE[key]).insert({ ...(item as object), user_id: userId });
+      const { error } = await sb.from(TABLE[key]).insert({ ...(item as object), user_id: userId });
+      if (error) throw new Error(`Save failed: ${error.message}`);
       await loadCloud(userId);
     } else persistDemo({ ...data, [key]: [item, ...(data[key] as unknown[])] } as Data);
   };
 
   const update: Store["update"] = async (key, id, patch) => {
     if (mode === "cloud" && sb && userId) {
-      await sb.from(TABLE[key]).update(patch as object).eq("id", id);
+      const { error } = await sb.from(TABLE[key]).update(patch as object).eq("id", id);
+      if (error) throw new Error(`Save failed: ${error.message}`);
       await loadCloud(userId);
     } else {
       persistDemo({ ...data, [key]: (data[key] as { id: ID }[]).map((r) => (r.id === id ? { ...r, ...patch } : r)) } as Data);

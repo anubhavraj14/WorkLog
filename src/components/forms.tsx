@@ -83,13 +83,24 @@ export function WorkEntryForm({ initial, quick, onSaved }: { initial?: WorkEntry
   const save = async () => {
     if (!e.title.trim()) return void dialog.alert("Please enter a task title.");
     setSaving(true);
-    const duration_min = durationBetween(e.start_time, e.end_time) || e.duration_min || 0;
-    const { extra } = splitWorkMinutes({ ...e, duration_min }, settings);
-    const item = { ...e, duration_min, is_extra: extra > 0, tags: tagsRaw.split(",").map((t) => t.trim()).filter(Boolean), project_id: e.project_id || null };
-    if (initial) await update("workEntries", e.id, item);
-    else await add("workEntries", item);
-    setSaving(false);
-    onSaved?.();
+    try {
+      const duration_min = durationBetween(e.start_time, e.end_time) || e.duration_min || 0;
+      const { extra } = splitWorkMinutes({ ...e, duration_min }, settings);
+      const item = { ...e, duration_min, is_extra: extra > 0, tags: tagsRaw.split(",").map((t) => t.trim()).filter(Boolean), project_id: e.project_id || null };
+      if (initial) await update("workEntries", e.id, item);
+      else {
+        await add("workEntries", item);
+        setE(blankEntry());
+        setTagsRaw("");
+        setSelectedTemplateId("");
+        setShowMore(false);
+      }
+      onSaved?.();
+    } catch (error) {
+      await dialog.alert(error instanceof Error ? error.message : "Unable to save this work log. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const [showMore, setShowMore] = useState(!!initial);
