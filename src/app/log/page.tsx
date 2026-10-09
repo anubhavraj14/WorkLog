@@ -17,7 +17,8 @@ export default function DailyLog() {
   const { data, settings, remove } = useStore();
   const dialog = useDialog();
   const projName = useProjectName();
-  const [date, setDate] = useState(params.get("d") ?? todayStr());
+  const date = params.get("d") ?? todayStr();
+  const setDate = (nextDate: string) => router.replace(`/log?d=${nextDate}`);
   const [edit, setEdit] = useState<WorkEntry | null>(null);
   const [editMeeting, setEditMeeting] = useState<Meeting | null>(null);
 
