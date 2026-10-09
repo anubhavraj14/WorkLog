@@ -35,6 +35,7 @@ export default function CalendarPage() {
         <Button variant="ghost" onClick={() => setCursor(view === "month" ? addMonths(cursor, -1) : addDays(cursor, -7))}><ChevronLeft size={16} /></Button>
         <span className="flex items-center px-2 text-sm font-medium">{format(cursor, view === "month" ? "MMMM yyyy" : "MMM d, yyyy")}</span>
         <Button variant="ghost" onClick={() => setCursor(view === "month" ? addMonths(cursor, 1) : addDays(cursor, 7))}><ChevronRight size={16} /></Button>
+        <input type="date" value={format(cursor, "yyyy-MM-dd")} onChange={(e) => e.target.value && setCursor(parseISO(e.target.value))} aria-label="Choose calendar date" className="rounded-lg border border-zinc-200 px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900" />
         <Button variant="ghost" onClick={() => setCursor(new Date())}>Today</Button>
         <div className="flex rounded-lg border border-zinc-200 p-0.5 text-xs dark:border-zinc-700">
           {(["month", "week"] as const).map((v) => (
